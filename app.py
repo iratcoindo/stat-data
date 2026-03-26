@@ -223,3 +223,75 @@ if all_data:
         for idx, group_set in enumerate(letter_list):
             for g in group_set:
                 letters[g] += alphabet[idx]
+
+    # ===============================
+    # PLOT
+    # ===============================
+    apply_prism_style()
+
+    means = grouped.mean()
+    stds = grouped.std()
+    ns = grouped.count()
+    ses = stds / np.sqrt(ns)
+
+    # pilih error bar
+    error_type = st.selectbox("Error Bar", ["SD", "SE"])
+    errors = stds if error_type == "SD" else ses
+
+    colors = prism_palette(len(group_order))
+    x = np.arange(len(group_order))
+
+    fig, ax = plt.subplots()
+
+    # BARPLOT
+    ax.bar(
+        x,
+        means.values,
+        yerr=errors.values,
+        capsize=6,
+        color=colors,
+        edgecolor="black",
+        linewidth=1.5,
+        alpha=0.8
+    )
+
+    # scatter (jitter)
+    for i, g in enumerate(group_order):
+        y = grouped.get_group(g)
+        jitter = np.random.normal(i, 0.04, size=len(y))
+
+        ax.scatter(
+            jitter,
+            y,
+            color="gray",
+            s=35,
+            zorder=3
+        )
+
+    # ===============================
+    # LETTER DISPLAY
+    # ===============================
+    y_max = df["Value"].max()
+    y_range = y_max - df["Value"].min()
+
+    for i, g in enumerate(group_order):
+        if letters[g]:
+            ax.text(
+                i,
+                y_max + y_range*0.1,
+                letters[g],
+                ha='center',
+                fontsize=14
+            )
+
+    # ===============================
+    # AXIS
+    # ===============================
+    ax.set_xticks(x)
+    ax.set_xticklabels(group_order, rotation=45, ha='right')
+    ax.set_ylabel("Value")
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    st.pyplot(fig)
