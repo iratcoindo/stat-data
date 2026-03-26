@@ -216,7 +216,7 @@ if all_data:
                 conflict = False
 
                 for g2 in sorted_groups:
-                i    f group_letters[g2] == letter:
+                    if group_letters[g2] == letter:
 
                         # kalau signifikan → conflict
                         if p_matrix.loc[g, g2] < alpha:
