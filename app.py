@@ -194,7 +194,8 @@ if all_data:
 
                 except:
                     p_matrix.loc[i, j] = 1
-
+        st.write("P matrix")
+        st.dataframe(p_matrix)
         # ===============================
         # SORT GROUP BY MEAN
         # ===============================
