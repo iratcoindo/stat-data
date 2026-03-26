@@ -76,24 +76,63 @@ if all_data:
     group_values = [grouped.get_group(g).values for g in group_order]
 
     # ===============================
-    # NORMALITY
+    # NORMALITY (SHAPIRO-WILK)
     # ===============================
+    st.markdown("### 🧪 Normality Test (Shapiro-Wilk)")
+
+    normality_results = []
     normal_flags = []
+
     for g in group_order:
-        stat, p = stats.shapiro(grouped.get_group(g))
-        normal_flags.append(p > 0.05)
+        values = grouped.get_group(g)
+
+        stat, p = stats.shapiro(values)
+
+        normal = p > 0.05
+        normal_flags.append(normal)
+
+        normality_results.append({
+            "Group": g,
+            "W statistic": round(stat, 4),
+            "p-value": round(p, 4),
+            "Normal": "Yes" if normal else "No"
+        })
+
+    normality_df = pd.DataFrame(normality_results)
+    st.dataframe(normality_df, use_container_width=True)
 
     all_normal = all(normal_flags)
 
     # ===============================
     # VARIANCE
     # ===============================
+    # ===============================
+    # VARIANCE TEST
+    # ===============================
+    st.markdown("### ⚖️ Variance Homogeneity Test")
+
     if len(group_values) == 2:
-        stat, p = stats.levene(*group_values)
-        var_equal = p > 0.05
+        # F-test
+        var1 = np.var(group_values[0], ddof=1)
+        var2 = np.var(group_values[1], ddof=1)
+
+        F = var1 / var2 if var1 > var2 else var2 / var1
+
+        # pendekatan kasar (rule of thumb)
+        var_equal = F < 4
+
+        st.write(f"F statistic: {round(F,4)}")
+        st.write(f"Equal variance: {'Yes' if var_equal else 'No'}")
+
     else:
-        stat, p = stats.levene(*group_values)
+        # Bartlett test
+        stat, p = stats.bartlett(*group_values)
+
         var_equal = p > 0.05
+
+        st.write(f"Bartlett statistic: {round(stat,4)}")
+        st.write(f"p-value: {round(p,4)}")
+        st.write(f"Equal variance: {'Yes' if var_equal else 'No'}")
 
     # ===============================
     # TEST SELECTION
@@ -194,8 +233,7 @@ if all_data:
 
                 except:
                     p_matrix.loc[i, j] = 1
-        st.write("P matrix")
-        st.dataframe(p_matrix)
+
         # ===============================
         # SORT GROUP BY MEAN
         # ===============================
