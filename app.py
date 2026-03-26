@@ -122,7 +122,16 @@ if all_data:
         elif all_normal:
             test = "Welch ANOVA"
             res = pg.welch_anova(dv="Value", between="Group", data=df)
-            p_value = res["p-unc"][0]
+
+            # aman untuk berbagai versi / kondisi
+            if "p-unc" in res.columns:
+                p_value = res["p-unc"].values[0]
+            elif "p-uncorrected" in res.columns:
+                p_value = res["p-uncorrected"].values[0]
+            else:
+                st.warning("Welch ANOVA gagal, fallback ke Kruskal")
+                stat, p_value = stats.kruskal(*group_values)
+                test = "Kruskal"
             posthoc_df = pg.pairwise_gameshowell(dv="Value", between="Group", data=df)
 
         else:
