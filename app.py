@@ -189,7 +189,7 @@ if all_data:
     # LETTER GROUPING (CLD - VALID)
     # ===============================
     # ===============================
-    # LETTER GROUPING (CLD - VALID)
+    # LETTER GROUPING (FINAL - ROBUST)
     # ===============================
     letters = {g: "" for g in group_order}
 
@@ -203,7 +203,7 @@ if all_data:
         p_matrix = pd.DataFrame(
             np.ones((k, k)),
             index=group_order,
-            columns=group_order
+                columns=group_order
         )
 
         for i in group_order:
@@ -238,50 +238,13 @@ if all_data:
                     p_matrix.loc[i, j] = 1
 
         # ===============================
-        # LETTER GROUPING (STRICT)
-        # ===============================
-        means = grouped.mean().sort_values(ascending=False)
-        sorted_groups = list(means.index)
-
-        group_letters = {g: "" for g in sorted_groups}
-        current_letter = "a"
-
-        for g in sorted_groups:
-
-            assigned = False
-
-            for letter in set(group_letters.values()):
-
-                if letter == "":
-                    continue
-
-                conflict = False
-
-                for g2 in sorted_groups:
-                    if group_letters[g2] == letter:
-
-                        if p_matrix.loc[g, g2] < alpha:
-                            conflict = True
-                            break
-
-                if not conflict:
-                    group_letters[g] += letter
-                    assigned = True
-                    break
-
-            if not assigned:
-                group_letters[g] += current_letter
-                current_letter = chr(ord(current_letter) + 1)
-
-        letters = group_letters
-        # ===============================
-        # SORT GROUP BY MEAN
+        # SORT BY MEAN
         # ===============================
         means = grouped.mean().sort_values(ascending=False)
         sorted_groups = list(means.index)
 
         # ===============================
-        # ASSIGN LETTERS
+        # LETTER ASSIGNMENT (STRICT RULE)
         # ===============================
         letter_list = []
 
@@ -290,10 +253,12 @@ if all_data:
             placed = False
 
             for group_set in letter_list:
+
+                # cek konflik dengan semua anggota set
                 conflict = False
 
                 for existing in group_set:
-                    if p_matrix.loc[g, existing] < alpha or p_matrix.loc[existing, g] < alpha:
+                    if p_matrix.loc[g, existing] < alpha:
                         conflict = True
                         break
 
@@ -305,12 +270,19 @@ if all_data:
             if not placed:
                 letter_list.append([g])
 
-        # assign letters
+        # ===============================
+        # CONVERT TO LETTERS
+        # ===============================
         alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
         for idx, group_set in enumerate(letter_list):
             for g in group_set:
-                letters[g] += alphabet[idx]
+                letters[g] = alphabet[idx]
+
+        # DEBUG (optional)
+        st.write("P-matrix")
+        st.dataframe(p_matrix)
+        st.write("Letters:", letters)
 
     # ===============================
     # PLOT
