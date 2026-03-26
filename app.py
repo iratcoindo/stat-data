@@ -9,6 +9,38 @@ import scikit_posthocs as sp
 import pingouin as pg
 
 # ===============================
+# CLD FUNCTION (R multcompLetters equivalent)
+# ===============================
+def cld_from_pmatrix(p_matrix, alpha=0.05):
+    groups = list(p_matrix.columns)
+
+    letters = {g: "" for g in groups}
+    letter_list = []
+
+    for g in groups:
+        placed = False
+
+        for i, group_set in enumerate(letter_list):
+            conflict = False
+
+            for existing in group_set:
+                if p_matrix.loc[g, existing] <= alpha:
+                    conflict = True
+                    break
+
+            if not conflict:
+                group_set.append(g)
+                letters[g] += chr(97 + i)  # a, b, c...
+                placed = True
+                break
+
+        if not placed:
+            letter_list.append([g])
+            letters[g] += chr(97 + len(letter_list) - 1)
+
+    return letters
+
+# ===============================
 # STYLE
 # ===============================
 def apply_prism_style():
@@ -189,96 +221,23 @@ if all_data:
     # LETTER GROUPING (CLD - VALID)
     # ===============================
     # ===============================
-    # LETTER GROUPING (FINAL - ROBUST)
+    # LETTER GROUPING (FINAL - FIXED)
     # ===============================
     letters = {g: "" for g in group_order}
 
     if posthoc_df is not None and k > 2:
 
-        alpha = 0.05
+        # pastikan format string
+        posthoc_df.index = posthoc_df.index.astype(str)
+        posthoc_df.columns = posthoc_df.columns.astype(str)
 
-        # ===============================
-        # BUILD P MATRIX
-        # ===============================
-        p_matrix = pd.DataFrame(
-            np.ones((k, k)),
-            index=group_order,
-                columns=group_order
-        )
+        group_order_str = [str(g) for g in group_order]
 
-        for i in group_order:
-            for j in group_order:
-                if i == j:
-                    continue
+        # ambil matrix sesuai urutan group
+        p_matrix = posthoc_df.loc[group_order_str, group_order_str]
 
-                try:
-                    if test == "Kruskal":
-                        p = posthoc_df.loc[i, j]
-
-                    elif test == "ANOVA":
-                        row = posthoc_df[
-                            ((posthoc_df['group1']==i) & (posthoc_df['group2']==j)) |
-                            ((posthoc_df['group1']==j) & (posthoc_df['group2']==i))
-                        ]
-                        p = row['p-adj'].values[0]
-
-                    elif test == "Welch ANOVA":
-                        row = posthoc_df[
-                            ((posthoc_df['A']==i) & (posthoc_df['B']==j)) |
-                            ((posthoc_df['A']==j) & (posthoc_df['B']==i))
-                        ]
-                        p = row['pval'].values[0]
-
-                    else:
-                        p = 1
-
-                    p_matrix.loc[i, j] = p
-
-                except:
-                    p_matrix.loc[i, j] = 1
-
-        # ===============================
-        # SORT BY MEAN
-        # ===============================
-        means = grouped.mean().sort_values(ascending=False)
-        sorted_groups = list(means.index)
-
-        # ===============================
-        # LETTER ASSIGNMENT (STRICT RULE)
-        # ===============================
-        letter_list = []
-
-        for g in sorted_groups:
-
-            placed = False
-
-            for group_set in letter_list:
-
-                # cek konflik dengan semua anggota set
-                conflict = False
-
-                for existing in group_set:
-                    if p_matrix.loc[g, existing] < alpha:
-                        conflict = True
-                        break
-
-                if not conflict:
-                    group_set.append(g)
-                    placed = True
-                    break
-
-            if not placed:
-                letter_list.append([g])
-
-        # ===============================
-        # CONVERT TO LETTERS
-        # ===============================
-        alphabet = list("abcdefghijklmnopqrstuvwxyz")
-
-        for idx, group_set in enumerate(letter_list):
-            for g in group_set:
-                letters[g] = alphabet[idx]
-
+        # generate CLD
+        letters = cld_from_pmatrix(p_matrix, alpha=0.05)
         # DEBUG (optional)
         st.write("P-matrix")
         st.dataframe(p_matrix)
