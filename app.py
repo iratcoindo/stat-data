@@ -138,52 +138,88 @@ if all_data:
         st.dataframe(posthoc_df)
 
     # ===============================
-    # LETTER GROUPING (BASED ON P)
+    # LETTER GROUPING (CLD - VALID)
     # ===============================
     letters = {g: "" for g in group_order}
 
     if posthoc_df is not None and k > 2:
 
         alpha = 0.05
-        current_letter = "a"
 
-        for g in group_order:
-            letters[g] = current_letter
+        # ===============================
+        # BUILD P-VALUE MATRIX
+        # ===============================
+        p_matrix = pd.DataFrame(
+            np.ones((k, k)),
+            index=group_order,
+            columns=group_order
+        )
 
-            for g2 in group_order:
-                if g != g2:
-                    try:
-                        p = posthoc_df.loc[g, g2] if test=="Kruskal" else None
-                        if p and p < alpha:
-                            current_letter = chr(ord(current_letter)+1)
-                    except:
-                        pass
+        for i in group_order:
+            for j in group_order:
+                if i == j:
+                    continue
 
-    # ===============================
-    # PLOT
-    # ===============================
-    apply_prism_style()
-    colors = prism_palette(len(group_order))
+                try:
+                    if test == "Kruskal":
+                        p = posthoc_df.loc[i, j]
 
-    fig, ax = plt.subplots()
+                    elif test == "ANOVA":
+                        row = posthoc_df[
+                            ((posthoc_df['group1']==i) & (posthoc_df['group2']==j)) |
+                            ((posthoc_df['group1']==j) & (posthoc_df['group2']==i))
+                        ]
+                        p = row['p-adj'].values[0]
 
-    means = grouped.mean()
-    stds = grouped.std()
+                    elif test == "Welch ANOVA":
+                        row = posthoc_df[
+                            ((posthoc_df['A']==i) & (posthoc_df['B']==j)) |
+                            ((posthoc_df['A']==j) & (posthoc_df['B']==i))
+                        ]
+                        p = row['pval'].values[0]
 
-    x = np.arange(len(group_order))
+                    else:
+                        p = 1
 
-    ax.bar(x, means.values, yerr=stds.values, capsize=5, color=colors, edgecolor="black")
+                    p_matrix.loc[i, j] = p
 
-    for i, g in enumerate(group_order):
-        y = grouped.get_group(g)
-        jitter = np.random.normal(i, 0.04, size=len(y))
-        ax.scatter(jitter, y, color="gray", s=30)
+                except:
+                    p_matrix.loc[i, j] = 1
 
-        if letters[g]:
-            ax.text(i, max(y)+stds[g]*1.2, letters[g], ha='center', fontsize=14)
+        # ===============================
+        # SORT GROUP BY MEAN
+        # ===============================
+        means = grouped.mean().sort_values(ascending=False)
+        sorted_groups = list(means.index)
 
-    ax.set_xticks(x)
-    ax.set_xticklabels(group_order, rotation=45, ha='right')
-    ax.set_ylabel("Value")
+        # ===============================
+        # ASSIGN LETTERS
+        # ===============================
+        letter_list = []
 
-    st.pyplot(fig)
+        for g in sorted_groups:
+
+            placed = False
+
+            for group_set in letter_list:
+                conflict = False
+
+                for existing in group_set:
+                    if p_matrix.loc[g, existing] < alpha:
+                        conflict = True
+                        break
+
+                if not conflict:
+                    group_set.append(g)
+                    placed = True
+                    break
+
+            if not placed:
+                letter_list.append([g])
+
+        # assign letters
+        alphabet = list("abcdefghijklmnopqrstuvwxyz")
+
+        for idx, group_set in enumerate(letter_list):
+            for g in group_set:
+                letters[g] += alphabet[idx]
