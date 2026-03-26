@@ -220,29 +220,46 @@ if all_data:
     # ===============================
     # LETTER GROUPING (CLD - VALID)
     # ===============================
+# ===============================
+# LETTER GROUPING (FINAL SAFE)
+# ===============================
+letters = {g: "" for g in group_order}
+
+if posthoc_df is not None and k > 2:
+
+    # ubah semua jadi string
+    posthoc_df.index = posthoc_df.index.astype(str)
+    posthoc_df.columns = posthoc_df.columns.astype(str)
+
+    group_order_str = [str(g) for g in group_order]
+
     # ===============================
-    # LETTER GROUPING (FINAL - FIXED)
+    # MATCH GROUP YANG ADA DI MATRIX
     # ===============================
-    letters = {g: "" for g in group_order}
+    valid_groups = [g for g in group_order_str if g in posthoc_df.index]
 
-    if posthoc_df is not None and k > 2:
+    if len(valid_groups) < 2:
+        st.error("Group names do not match posthoc matrix")
+        st.write("Group order:", group_order_str)
+        st.write("Posthoc index:", list(posthoc_df.index))
+        st.stop()
 
-        # pastikan format string
-        posthoc_df.index = posthoc_df.index.astype(str)
-        posthoc_df.columns = posthoc_df.columns.astype(str)
+    # ambil hanya yang valid
+    p_matrix = posthoc_df.loc[valid_groups, valid_groups]
 
-        group_order_str = [str(g) for g in group_order]
+    # ===============================
+    # CLD
+    # ===============================
+    letters = cld_from_pmatrix(p_matrix, alpha=0.05)
 
-        # ambil matrix sesuai urutan group
-        p_matrix = posthoc_df.loc[group_order_str, group_order_str]
+    # isi ke semua group (yang tidak ada tetap kosong)
+    letters = {g: letters.get(str(g), "") for g in group_order}
 
-        # generate CLD
-        letters = cld_from_pmatrix(p_matrix, alpha=0.05)
-        # DEBUG (optional)
-        st.write("P-matrix")
-        st.dataframe(p_matrix)
-        st.write("Letters:", letters)
-
+    # DEBUG
+    st.write("Valid groups:", valid_groups)
+    st.write("P-matrix:")
+    st.dataframe(p_matrix)
+    st.write("Letters:", letters)
     # ===============================
     # PLOT
     # ===============================
