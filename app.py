@@ -106,9 +106,6 @@ if all_data:
     # ===============================
     # VARIANCE
     # ===============================
-    # ===============================
-    # VARIANCE TEST
-    # ===============================
     st.markdown("### ⚖️ Variance Homogeneity Test")
 
     if len(group_values) == 2:
@@ -189,7 +186,7 @@ if all_data:
     # LETTER GROUPING (CLD - VALID)
     # ===============================
     # ===============================
-    # LETTER GROUPING (FIXED - STRICT)
+    # LETTER GROUPING (CLD - VALID)
     # ===============================
     letters = {g: "" for g in group_order}
 
@@ -197,10 +194,52 @@ if all_data:
 
         alpha = 0.05
 
+        # ===============================
+        # BUILD P MATRIX
+        # ===============================
+        p_matrix = pd.DataFrame(
+            np.ones((k, k)),
+            index=group_order,
+            columns=group_order
+        )
+
+        for i in group_order:
+            for j in group_order:
+                if i == j:
+                    continue
+
+                try:
+                    if test == "Kruskal":
+                        p = posthoc_df.loc[i, j]
+
+                    elif test == "ANOVA":
+                        row = posthoc_df[
+                            ((posthoc_df['group1']==i) & (posthoc_df['group2']==j)) |
+                            ((posthoc_df['group1']==j) & (posthoc_df['group2']==i))
+                        ]
+                        p = row['p-adj'].values[0]
+
+                    elif test == "Welch ANOVA":
+                        row = posthoc_df[
+                            ((posthoc_df['A']==i) & (posthoc_df['B']==j)) |
+                            ((posthoc_df['A']==j) & (posthoc_df['B']==i))
+                        ]
+                        p = row['pval'].values[0]
+
+                    else:
+                        p = 1
+
+                    p_matrix.loc[i, j] = p
+
+                except:
+                    p_matrix.loc[i, j] = 1
+
+        # ===============================
+        # LETTER GROUPING (STRICT)
+        # ===============================
         means = grouped.mean().sort_values(ascending=False)
         sorted_groups = list(means.index)
 
-        # start dengan huruf pertama
         group_letters = {g: "" for g in sorted_groups}
         current_letter = "a"
 
@@ -218,7 +257,6 @@ if all_data:
                 for g2 in sorted_groups:
                     if group_letters[g2] == letter:
 
-                        # kalau signifikan → conflict
                         if p_matrix.loc[g, g2] < alpha:
                             conflict = True
                             break
@@ -233,7 +271,6 @@ if all_data:
                 current_letter = chr(ord(current_letter) + 1)
 
         letters = group_letters
-
         # ===============================
         # SORT GROUP BY MEAN
         # ===============================
