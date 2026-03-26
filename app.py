@@ -295,3 +295,43 @@ if all_data:
     ax.spines['right'].set_visible(False)
 
     st.pyplot(fig)
+    # ===============================
+    # TEST LABEL (AUTO)
+    # ===============================
+    if test == "ANOVA":
+        test_label = "ANOVA"
+    elif test == "Welch ANOVA":
+        test_label = "Welch ANOVA"
+    elif test == "Kruskal":
+        test_label = "Kruskal-Wallis"
+    elif test == "t-test":
+        test_label = "t-test"
+    elif test == "Welch t-test":
+        test_label = "Welch t-test"
+    elif test == "Mann-Whitney":
+        test_label = "Mann-Whitney U"
+    else:
+        test_label = test
+
+    # format p-value (biar rapi seperti jurnal)
+    if p_value < 0.0001:
+        p_text = "p < 0.0001"
+    else:
+        p_text = f"p = {round(p_value,4)}"
+
+    # ===============================
+    # POSISI TEKS
+    # ===============================
+    y_max = df["Value"].max()
+    y_min = df["Value"].min()
+    y_range = y_max - y_min
+
+    ax.text(
+        ax.get_xlim()[0],                  # kiri plot
+        y_max + y_range*0.2,               # di atas plot
+        f"{test_label}, {p_text}",
+        ha='left',
+        va='bottom',
+        fontsize=13,
+        fontweight='bold'
+    )
