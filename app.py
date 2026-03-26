@@ -294,7 +294,6 @@ if all_data:
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    st.pyplot(fig)
     # ===============================
     # TEST LABEL (AUTO)
     # ===============================
@@ -335,3 +334,5 @@ if all_data:
         fontsize=13,
         fontweight='bold'
     )
+    
+    st.pyplot(fig)
