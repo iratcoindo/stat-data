@@ -128,7 +128,10 @@ if all_data:
         var_equal = p > 0.05
 
         st.write(f"Bartlett statistic: {round(stat,4)}")
-        st.write(f"p-value: {round(p,4)}")
+        if p < 0.0001:
+            st.write("p-value: < 0.0001")
+        else:
+            st.write(f"p-value: {round(p,4)}")
         st.write(f"Equal variance: {'Yes' if var_equal else 'No'}")
 
     # ===============================
