@@ -214,7 +214,7 @@ if all_data:
                 conflict = False
 
                 for existing in group_set:
-                    if p_matrix.loc[g, existing] < alpha:
+                    if p_matrix.loc[g, existing] < alpha or p_matrix.loc[existing, g] < alpha:
                         conflict = True
                         break
 
