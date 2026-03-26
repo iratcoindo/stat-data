@@ -138,195 +138,52 @@ if all_data:
         st.dataframe(posthoc_df)
 
     # ===============================
-    # LETTER GROUPING (IMPROVED)
+    # LETTER GROUPING (BASED ON P)
     # ===============================
-    letters = {}
-    alphabet = list("abcdefghijklmnopqrstuvwxyz")
+    letters = {g: "" for g in group_order}
 
-    sorted_groups = means.sort_values(ascending=False).index
+    if posthoc_df is not None and k > 2:
 
-    threshold = errors.mean()
+        alpha = 0.05
+        current_letter = "a"
 
-    group_letters = []
+        for g in group_order:
+            letters[g] = current_letter
 
-    for i, g in enumerate(sorted_groups):
-
-        assigned = False
-
-        for j, existing in enumerate(group_letters):
-            # cek apakah bisa masuk grup ini
-            conflict = False
-
-            for eg in existing:
-                if abs(means[g] - means[eg]) > threshold:
-                    conflict = True
-                    break
-
-            if not conflict:
-                existing.append(g)
-                letters[g] = alphabet[j]
-                assigned = True
-                break
-
-        if not assigned:
-            group_letters.append([g])
-            letters[g] = alphabet[len(group_letters)-1]
+            for g2 in group_order:
+                if g != g2:
+                    try:
+                        p = posthoc_df.loc[g, g2] if test=="Kruskal" else None
+                        if p and p < alpha:
+                            current_letter = chr(ord(current_letter)+1)
+                    except:
+                        pass
 
     # ===============================
-    # VISUALIZATION (PRISM STYLE FINAL)
+    # PLOT
     # ===============================
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    EDGE_COLOR = "black"   # abu gelap
-    JITTER_COLOR = "gray"
-    ALPHA_FILL = 0.7
-
     apply_prism_style()
-    colors = prism_palette(len(groups))
+    colors = prism_palette(len(group_order))
 
     fig, ax = plt.subplots()
 
-    # ===============================
-    # GLOBAL Y SYSTEM (PENTING)
-    # ===============================
-    y_min = df["Value"].min()
-    y_max = df["Value"].max()
-    y_range = y_max - y_min
+    means = grouped.mean()
+    stds = grouped.std()
 
-    offset_letter = y_range * 0.08
-    offset_pval   = y_range * 0.1
-    offset_top    = y_range * 0.11
+    x = np.arange(len(group_order))
 
-    y_letter = y_max + offset_letter
-    y_pval   = y_letter + offset_pval
+    ax.bar(x, means.values, yerr=stds.values, capsize=5, color=colors, edgecolor="black")
 
-    # ===============================
-    # BOXPLOT
-    # ===============================
-    if plot_type == "Boxplot":
+    for i, g in enumerate(group_order):
+        y = grouped.get_group(g)
+        jitter = np.random.normal(i, 0.04, size=len(y))
+        ax.scatter(jitter, y, color="gray", s=30)
 
-        data = [df[df["Group"] == g]["Value"] for g in groups]
+        if letters[g]:
+            ax.text(i, max(y)+stds[g]*1.2, letters[g], ha='center', fontsize=14)
 
-        box = ax.boxplot(
-            data,
-            patch_artist=True,
-            showfliers=False,
-            widths=0.6
-        )
-
-        for patch, color in zip(box['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(ALPHA_FILL)
-            patch.set_edgecolor(EDGE_COLOR)
-            patch.set_linewidth(1.5)
-
-        for element in ['whiskers', 'caps', 'medians']:
-            for item in box[element]:
-                item.set_color(EDGE_COLOR)
-                item.set_linewidth(1.5)
-
-        # scatter
-        for i, g in enumerate(groups):
-            y = df[df["Group"] == g]["Value"]
-            x = np.random.normal(i+1, 0.04, size=len(y))
-
-            ax.scatter(
-                x, y,
-                color=JITTER_COLOR,
-                s=35,              # lebih kecil
-                linewidth=0,
-                zorder=3
-            )
-
-        ax.set_xticklabels(groups,
-            rotation=45,
-            ha='right'   # penting supaya tidak numpuk
-        )
-
-    # ===============================
-    # BARPLOT
-    # ===============================
-    else:
-
-        x = np.arange(len(groups))
-
-        ax.bar(
-            x,
-            means.values,
-            yerr=errors.values,
-            capsize=6,
-            color=colors,
-            edgecolor=EDGE_COLOR,
-            linewidth=1.5,
-            alpha=ALPHA_FILL
-        )
-
-        for i, g in enumerate(groups):
-            y = df[df["Group"] == g]["Value"]
-            x_jitter = np.random.normal(i, 0.04, size=len(y))
-
-            ax.scatter(
-                x_jitter,
-                y,
-                color=JITTER_COLOR,
-                s=35,              # lebih kecil
-                linewidth=0,
-                zorder=3
-            )
-
-        ax.set_xticks(x)
-        ax.set_xticklabels(groups,
-            rotation=45,
-            ha='right'   # penting supaya tidak numpuk
-        )
-
-    # ===============================
-    # SIGNIFICANCE LETTER (RATA)
-    # ===============================
-    if p_value < 0.05:
-        for i, g in enumerate(groups):
-
-            xpos = i+1 if plot_type == "Boxplot" else i
-
-            ax.text(
-                xpos,
-                y_letter,
-                letters[g],
-                ha='center',
-                fontsize=14
-            )
-
-    # ===============================
-    # P VALUE (KIRI ATAS)
-    # ===============================
-    ax.text(
-        ax.get_xlim()[0],   # kiri plot
-        y_pval,             # posisi Y yang sudah kita hitung
-        f"p val = {round(p_value,4)}",
-        ha='left',
-        va='bottom',
-        fontsize=14
-    )
-
-    # ===============================
-    # AXIS LIMIT (BIAR GA NUBRUK)
-    # ===============================
-    ax.set_ylim(
-        y_min-(y_range*0.2),
-        y_letter + offset_pval + (offset_top*0.2)
-    )
-
-    # ===============================
-    # CLEAN STYLE (PRISM)
-    # ===============================
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
-    for spine in ax.spines.values():
-        spine.set_color(EDGE_COLOR)
-        spine.set_linewidth(1.5)
-
+    ax.set_xticks(x)
+    ax.set_xticklabels(group_order, rotation=45, ha='right')
     ax.set_ylabel("Value")
 
     st.pyplot(fig)
