@@ -186,13 +186,31 @@ if all_data:
     # LETTER GROUPING (CLD - VALID)
     # ===============================
     # ===============================
-    # LETTER GROUPING (CLD - VALID)
+    # LETTER GROUPING (FINAL FIX - SIMPLE & CORRECT)
     # ===============================
-    letters = {g: "" for g in group_order}
+    letters = {}
 
     if posthoc_df is not None and k > 2:
 
         alpha = 0.05
+
+        means = grouped.mean().sort_values(ascending=False)
+        sorted_groups = list(means.index)
+
+        letters = {}
+        current_letter = "a"
+
+        for i, g in enumerate(sorted_groups):
+
+            letters[g] = current_letter
+
+            for j in range(i+1, len(sorted_groups)):
+                g2 = sorted_groups[j]
+
+                if p_matrix.loc[g, g2] < alpha:
+                    # beda signifikan → huruf baru
+                    current_letter = chr(ord(current_letter) + 1)
+                    break
 
         # ===============================
         # BUILD P MATRIX
