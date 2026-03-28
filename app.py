@@ -364,14 +364,20 @@ if all_data:
     y_range = y_max - df["Value"].min()
 
     for i, g in enumerate(group_order):
-        if letters[g]:
-            ax.text(
-                i,
-                y_max + y_range*0.1,
-                letters[g],
-                ha='center',
-                fontsize=14
-            )
+
+        # posisi x menyesuaikan jenis plot
+        if plot_type == "Boxplot":
+            xpos = i + 1
+        else:
+            xpos = i
+    
+                ax.text(
+                    xpos,
+                    y_max + y_range*0.1,
+                    letters[g],
+                    ha='center',
+                    fontsize=14
+                )
 
     # ===============================
     # AXIS
