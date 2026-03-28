@@ -26,6 +26,21 @@ def prism_palette(n):
     return [base[i % len(base)] for i in range(n)]
 
 # ===============================
+# SIGNIFICANCE STAR FUNCTION
+# ===============================
+def p_to_star(p):
+    if p < 0.0001:
+        return "****"
+    elif p < 0.001:
+        return "***"
+    elif p < 0.01:
+        return "**"
+    elif p < 0.05:
+        return "*"
+    else:
+        return "ns"
+
+# ===============================
 # UI
 # ===============================
 st.set_page_config(layout="wide")
@@ -95,7 +110,7 @@ if all_data:
             "Group": g,
             "W statistic": round(stat, 4),
             "p-value": round(p, 4),
-            "Normal": "Yes" if normal else "No"
+            "Normal": "Normal" if normal else "Not Normal"
         })
 
     normality_df = pd.DataFrame(normality_results)
@@ -119,7 +134,7 @@ if all_data:
         var_equal = F < 4
 
         st.write(f"F statistic: {round(F,4)}")
-        st.write(f"Equal variance: {'Yes' if var_equal else 'No'}")
+        st.write(f"Equal variance: {'Equal' if var_equal else 'Unequal'}")
 
     else:
         # Bartlett test
@@ -132,7 +147,7 @@ if all_data:
             st.write("p-value: < 0.0001")
         else:
             st.write(f"p-value: {round(p,4)}")
-        st.write(f"Equal variance: {'Yes' if var_equal else 'No'}")
+        st.write(f"Equal variance: {'Equal' if var_equal else 'Unequal'}")
 
     # ===============================
     # TEST SELECTION
@@ -182,8 +197,35 @@ if all_data:
     st.write(f"p-value: {round(p_value,5)}")
 
     if posthoc_df is not None:
-        st.write("### 📌 Post-hoc Result")
-        st.dataframe(posthoc_df)
+    st.write("### 📌 Post-hoc Result")
+
+    df_posthoc = posthoc_df.copy()
+
+    # ===============================
+    # TAMBAH KOLOM P.SIGNIF TANPA UBAH STRUKTUR
+    # ===============================
+
+    try:
+        if test == "ANOVA":
+            if "p-adj" in df_posthoc.columns:
+                df_posthoc["p.signif"] = df_posthoc["p-adj"].astype(float).apply(p_to_star)
+
+        elif test == "Welch ANOVA":
+            if "pval" in df_posthoc.columns:
+                df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
+
+        elif test in ["t-test", "Welch t-test", "Mann-Whitney"]:
+            if "pval" in df_posthoc.columns:
+                df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
+
+        elif test == "Kruskal":
+            # Dunn test → matrix → tidak bisa langsung
+            st.info("p.signif not added (Dunn matrix format)")
+
+    except Exception as e:
+        st.warning(f"p.signif generation error: {e}")
+
+    st.dataframe(df_posthoc, use_container_width=True)
 
     # ===============================
     # LETTER GROUPING (CLD - VALID)
