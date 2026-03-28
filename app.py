@@ -216,19 +216,90 @@ if all_data:
         
         st.write(f"### 📌 Post-hoc Result ({posthoc_label})")
         # ===============================
-        # GANTI HEDGES → P.SIGNIF
+        # STANDARDIZE POSTHOC OUTPUT (UNIFORM FORMAT)
         # ===============================
-        df_posthoc = posthoc_df.copy()
+        df_posthoc_clean = pd.DataFrame()
         
-        if "pval" in df_posthoc.columns:
-            df_posthoc["pval"] = pd.to_numeric(df_posthoc["pval"], errors="coerce")
-            df_posthoc["p.signif"] = df_posthoc["pval"].apply(p_to_star)
+        mean_map = df.groupby("Group")["Value"].mean().to_dict()
         
-            # 🔥 hapus kolom hedges
-            if "hedges" in df_posthoc.columns:
-                df_posthoc = df_posthoc.drop(columns=["hedges"])
+        # ===============================
+        # ANOVA (Tukey)
+        # ===============================
+        if test == "ANOVA":
         
-        st.dataframe(df_posthoc, use_container_width=True)
+            df_tmp = posthoc_df.copy()
+        
+            df_posthoc_clean["A"] = df_tmp["group1"]
+            df_posthoc_clean["B"] = df_tmp["group2"]
+            df_posthoc_clean["mean_A"] = df_posthoc_clean["A"].map(mean_map)
+            df_posthoc_clean["mean_B"] = df_posthoc_clean["B"].map(mean_map)
+        
+            df_posthoc_clean["diff"] = df_tmp["meandiff"]
+            df_posthoc_clean["se"] = np.nan
+            df_posthoc_clean["T"] = np.nan
+            df_posthoc_clean["df"] = np.nan
+            df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["p-adj"], errors="coerce")
+        
+        # ===============================
+        # WELCH (Games-Howell)
+        # ===============================
+        elif test == "Welch ANOVA":
+        
+            df_tmp = posthoc_df.copy()
+        
+            df_posthoc_clean["A"] = df_tmp["A"]
+            df_posthoc_clean["B"] = df_tmp["B"]
+            df_posthoc_clean["mean_A"] = df_tmp["mean(A)"]
+            df_posthoc_clean["mean_B"] = df_tmp["mean(B)"]
+        
+            df_posthoc_clean["diff"] = df_tmp["diff"]
+            df_posthoc_clean["se"] = df_tmp["se"]
+            df_posthoc_clean["T"] = df_tmp["T"]
+            df_posthoc_clean["df"] = df_tmp["df"]
+            df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["pval"], errors="coerce")
+        
+        # ===============================
+        # KRUSKAL (Dunn)
+        # ===============================
+        elif test == "Kruskal Wallis":
+        
+            df_tmp = posthoc_df.stack().reset_index()
+            df_tmp.columns = ["A", "B", "pval"]
+        
+            # ambil hanya kombinasi unik
+            df_tmp = df_tmp[df_tmp["A"] < df_tmp["B"]]
+        
+            df_posthoc_clean["A"] = df_tmp["A"]
+            df_posthoc_clean["B"] = df_tmp["B"]
+        
+            df_posthoc_clean["mean_A"] = df_posthoc_clean["A"].map(mean_map)
+            df_posthoc_clean["mean_B"] = df_posthoc_clean["B"].map(mean_map)
+        
+            df_posthoc_clean["diff"] = df_posthoc_clean["mean_A"] - df_posthoc_clean["mean_B"]
+            df_posthoc_clean["se"] = np.nan
+            df_posthoc_clean["T"] = np.nan
+            df_posthoc_clean["df"] = np.nan
+            df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["pval"], errors="coerce")
+
+        # ===============================
+        # ADD SIGNIFICANCE STAR
+        # ===============================
+        df_posthoc_clean["p.signif"] = df_posthoc_clean["pval"].apply(p_to_star)
+        
+        # ===============================
+        # FINAL COLUMN ORDER
+        # ===============================
+        df_posthoc_clean = df_posthoc_clean[
+            ["A","B","mean_A","mean_B","diff","se","T","df","pval","p.signif"]
+        ]
+        
+        # ===============================
+        # DISPLAY
+        # ===============================
+        st.dataframe(df_posthoc_clean, use_container_width=True)
+        
+        # 👉 pakai ini untuk CLD
+        df_posthoc = df_posthoc_clean.copy()
 
 
     # ===============================
