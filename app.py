@@ -371,13 +371,13 @@ if all_data:
         else:
             xpos = i
     
-                ax.text(
-                    xpos,
-                    y_max + y_range*0.1,
-                    letters[g],
-                    ha='center',
-                    fontsize=14
-                )
+            ax.text(
+                xpos,
+                y_max + y_range*0.1,
+                letters[g],
+                ha='center',
+                fontsize=14
+            )
 
     # ===============================
     # AXIS
