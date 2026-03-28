@@ -198,7 +198,7 @@ if all_data:
 
     st.write(f"### 🧠 Test Used: {test}")
     st.write(f"p-value: {round(p_value,5)}")
-
+    
     if posthoc_df is not None: 
         # ===============================
         # AUTO LABEL POSTHOC TEST
@@ -215,105 +215,21 @@ if all_data:
             posthoc_label = "Post-hoc"
         
         st.write(f"### 📌 Post-hoc Result ({posthoc_label})")
+        # ===============================
+        # GANTI HEDGES → P.SIGNIF
+        # ===============================
+        df_posthoc = posthoc_df.copy()
+        
+        if "pval" in df_posthoc.columns:
+            df_posthoc["pval"] = pd.to_numeric(df_posthoc["pval"], errors="coerce")
+            df_posthoc["p.signif"] = df_posthoc["pval"].apply(p_to_star)
+        
+            # 🔥 hapus kolom hedges
+            if "hedges" in df_posthoc.columns:
+                df_posthoc = df_posthoc.drop(columns=["hedges"])
+        
+        st.dataframe(df_posthoc, use_container_width=True)
 
-        # ===============================
-        # STANDARDIZE POSTHOC OUTPUT (SAFE VERSION)
-        # ===============================
-        mean_map = df.groupby("Group")["Value"].mean().to_dict()
-        
-        # dataframe final
-        df_posthoc_clean = pd.DataFrame()
-        
-        # ===============================
-        # ANOVA (Tukey)
-        # ===============================
-        if test == "ANOVA":
-        
-            df_tmp = posthoc_df.copy()
-        
-            df_posthoc_clean["A"] = df_tmp["group1"]
-            df_posthoc_clean["B"] = df_tmp["group2"]
-            df_posthoc_clean["mean_A"] = df_posthoc_clean["A"].map(mean_map)
-            df_posthoc_clean["mean_B"] = df_posthoc_clean["B"].map(mean_map)
-        
-            df_posthoc_clean["diff"] = pd.to_numeric(df_tmp["meandiff"], errors="coerce")
-            df_posthoc_clean["se"] = np.nan
-            df_posthoc_clean["T"] = np.nan
-            df_posthoc_clean["df"] = np.nan
-            df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["p-adj"], errors="coerce")
-        
-        # ===============================
-        # WELCH (Games-Howell)
-        # ===============================
-        elif test == "Welch ANOVA":
-        
-            df_tmp = posthoc_df.copy()
-        
-            df_posthoc_clean["A"] = df_tmp["A"]
-            df_posthoc_clean["B"] = df_tmp["B"]
-            df_posthoc_clean["mean_A"] = df_tmp["mean(A)"]
-            df_posthoc_clean["mean_B"] = df_tmp["mean(B)"]
-        
-            df_posthoc_clean["diff"] = pd.to_numeric(df_tmp["diff"], errors="coerce")
-            df_posthoc_clean["se"] = pd.to_numeric(df_tmp["se"], errors="coerce")
-            df_posthoc_clean["T"] = pd.to_numeric(df_tmp["T"], errors="coerce")
-            df_posthoc_clean["df"] = pd.to_numeric(df_tmp["df"], errors="coerce")
-            df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["pval"], errors="coerce")
-        
-        # ===============================
-        # KRUSKAL (Dunn)
-        # ===============================
-        # ===============================
-        # KRUSKAL (Dunn) - FIX FINAL
-        # ===============================
-        elif test == "Kruskal Wallis":
-        
-            df_tmp = posthoc_df.copy().stack().reset_index()
-            df_tmp.columns = ["A", "B", "pval"]
-        
-            # buang self comparison
-            df_tmp = df_tmp[df_tmp["A"] != df_tmp["B"]]
-        
-            # pastikan string (anti error)
-            df_tmp["A"] = df_tmp["A"].astype(str)
-            df_tmp["B"] = df_tmp["B"].astype(str)
-        
-            # buang NaN
-            df_tmp = df_tmp.dropna(subset=["A", "B", "pval"])
-        
-            # ===============================
-            # REMOVE DUPLICATE PAIRS (AMAN TANPA APPLY)
-            # ===============================
-            seen = set()
-            rows = []
-        
-            for _, row in df_tmp.iterrows():
-                a = row["A"]
-                b = row["B"]
-        
-                key1 = f"{a}_{b}"
-                key2 = f"{b}_{a}"
-        
-                if key1 not in seen and key2 not in seen:
-                    seen.add(key1)
-                    rows.append(row)
-        
-            df_tmp = pd.DataFrame(rows)
-        
-            # ===============================
-            # BUILD FINAL TABLE
-            # ===============================
-            df_posthoc_clean["A"] = df_tmp["A"]
-            df_posthoc_clean["B"] = df_tmp["B"]
-        
-            df_posthoc_clean["mean_A"] = df_posthoc_clean["A"].map(mean_map)
-            df_posthoc_clean["mean_B"] = df_posthoc_clean["B"].map(mean_map)
-        
-            df_posthoc_clean["diff"] = df_posthoc_clean["mean_A"] - df_posthoc_clean["mean_B"]
-            df_posthoc_clean["se"] = np.nan
-            df_posthoc_clean["T"] = np.nan
-            df_posthoc_clean["df"] = np.nan
-            df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["pval"], errors="coerce")
         
         # ===============================
         # ADD SIGNIFICANCE
