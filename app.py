@@ -230,92 +230,62 @@ if all_data:
         
         st.dataframe(df_posthoc, use_container_width=True)
 
+
     # ===============================
-    # LETTER GROUPING (CLD - VALID)
+    # BUILD SIGNIFICANCE MATRIX (FROM pval)
     # ===============================
-    letters = {g: "" for g in group_order}
+    alpha = 0.05
+    groups = group_order
+    
+    # matrix default = NOT significant (True = boleh share huruf)
+    sig_matrix = pd.DataFrame(True, index=groups, columns=groups)
+    
+    for _, row in df_posthoc.iterrows():
+        g1 = row["A"]
+        g2 = row["B"]
+        p = float(row["pval"])
+    
+        if p < alpha:
+            sig_matrix.loc[g1, g2] = False
+            sig_matrix.loc[g2, g1] = False
+        else:
+            sig_matrix.loc[g1, g2] = True
+            sig_matrix.loc[g2, g1] = True
+    
+    # diagonal = True
+    np.fill_diagonal(sig_matrix.values, True)
 
-    if posthoc_df is not None and k > 2:
-
-        alpha = 0.05
-
-        # ===============================
-        # BUILD P-VALUE MATRIX
-        # ===============================
-        p_matrix = pd.DataFrame(
-            np.ones((k, k)),
-            index=group_order,
-            columns=group_order
-        )
-
-        for i in group_order:
-            for j in group_order:
-                if i == j:
-                    continue
-
-                try:
-                    if test == "Kruskal":
-                        p = posthoc_df.loc[i, j]
-
-                    elif test == "ANOVA":
-                        row = posthoc_df[
-                            ((posthoc_df['group1']==i) & (posthoc_df['group2']==j)) |
-                            ((posthoc_df['group1']==j) & (posthoc_df['group2']==i))
-                        ]
-                        p = row['p-adj'].values[0]
-
-                    elif test == "Welch ANOVA":
-                        row = posthoc_df[
-                            ((posthoc_df['A']==i) & (posthoc_df['B']==j)) |
-                            ((posthoc_df['A']==j) & (posthoc_df['B']==i))
-                        ]
-                        p = row['pval'].values[0]
-
-                    else:
-                        p = 1
-
-                    p_matrix.loc[i, j] = p
-
-                except:
-                    p_matrix.loc[i, j] = 1
-
-        # ===============================
-        # SORT GROUP BY MEAN
-        # ===============================
-        means = grouped.mean().sort_values(ascending=False)
-        sorted_groups = list(means.index)
-
-        # ===============================
-        # ASSIGN LETTERS
-        # ===============================
-        letter_list = []
-
-        for g in sorted_groups:
-
-            placed = False
-
-            for group_set in letter_list:
-                conflict = False
-
-                for existing in group_set:
-                    if p_matrix.loc[g, existing] < alpha or p_matrix.loc[existing, g] < alpha:
-                        conflict = True
-                        break
-
-                if not conflict:
-                    group_set.append(g)
-                    placed = True
+    # ===============================
+    # GENERATE LETTERS (CLD STYLE)
+    # ===============================
+    letters = {g: "" for g in groups}
+    alphabet = list("abcdefghijklmnopqrstuvwxyz")
+    
+    sorted_groups = grouped.mean().sort_values(ascending=False).index.tolist()
+    
+    letter_sets = []
+    
+    for g in sorted_groups:
+        placed = False
+    
+        for idx, group_set in enumerate(letter_sets):
+    
+            conflict = False
+            for existing in group_set:
+                # ❗ kalau signifikan → tidak boleh satu huruf
+                if not sig_matrix.loc[g, existing]:
+                    conflict = True
                     break
-
-            if not placed:
-                letter_list.append([g])
-
-        # assign letters
-        alphabet = list("abcdefghijklmnopqrstuvwxyz")
-
-        for idx, group_set in enumerate(letter_list):
-            for g in group_set:
+    
+            if not conflict:
+                group_set.append(g)
                 letters[g] += alphabet[idx]
+                placed = True
+                break
+    
+        if not placed:
+            letter_sets.append([g])
+            letters[g] += alphabet[len(letter_sets)-1]
 
     # ===============================
     # PLOT
@@ -401,7 +371,23 @@ if all_data:
             )
 
         ax.set_xticks(range(1, len(group_order)+1))
-
+    # ===============================
+    # LETTER DISPLAY (CLD)
+    # ===============================
+    y_max = df["Value"].max()
+    y_range = y_max - df["Value"].min()
+    
+    for i, g in enumerate(group_order):
+    
+        xpos = i if plot_type == "Barplot" else i + 1
+    
+        ax.text(
+            xpos,
+            y_max + y_range*0.1,
+            letters[g],
+            ha='center',
+            fontsize=14
+        )
     # ===============================
     # AXIS
     # ===============================
