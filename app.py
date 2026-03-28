@@ -29,16 +29,19 @@ def prism_palette(n):
 # SIGNIFICANCE STAR FUNCTION
 # ===============================
 def p_to_star(p):
-    if p < 0.0001:
-        return "****"
-    elif p < 0.001:
-        return "***"
-    elif p < 0.01:
-        return "**"
-    elif p < 0.05:
-        return "*"
-    else:
-        return "ns"
+    try:
+        if p < 0.0001:
+            return "****"
+        elif p < 0.001:
+            return "***"
+        elif p < 0.01:
+            return "**"
+        elif p < 0.05:
+            return "*"
+        else:
+            return "ns"
+    except:
+        return ""
 
 # ===============================
 # UI
@@ -198,7 +201,20 @@ if all_data:
 
     if posthoc_df is not None: 
         st.write("### 📌 Post-hoc Result") 
-        st.dataframe(posthoc_df)
+        # ===============================
+        # GANTI HEDGES → P.SIGNIF
+        # ===============================
+        df_posthoc = posthoc_df.copy()
+        
+        if "pval" in df_posthoc.columns:
+            df_posthoc["pval"] = pd.to_numeric(df_posthoc["pval"], errors="coerce")
+            df_posthoc["p.signif"] = df_posthoc["pval"].apply(p_to_star)
+        
+            # 🔥 hapus kolom hedges
+            if "hedges" in df_posthoc.columns:
+                df_posthoc = df_posthoc.drop(columns=["hedges"])
+        
+        st.dataframe(df_posthoc, use_container_width=True)
 
     # ===============================
     # LETTER GROUPING (CLD - VALID)
