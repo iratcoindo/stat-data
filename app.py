@@ -238,34 +238,44 @@ if all_data:
     
     # matrix default = NOT significant (True = boleh share huruf)
     sig_matrix = pd.DataFrame(True, index=groups, columns=groups)
-    
-    for _, row in df_posthoc.iterrows():
-        # ===============================
-        # AUTO DETECT COLUMN NAME
-        # ===============================
-        if "A" in df_posthoc.columns and "B" in df_posthoc.columns:
-            g1 = row["A"]
-            g2 = row["B"]
-            p = float(row["pval"])
-    
-        elif "group1" in df_posthoc.columns and "group2" in df_posthoc.columns:
-            g1 = row["group1"]
-            g2 = row["group2"]
-            p = float(row["p-adj"])
-    
-        else:
-            continue  # skip kalau format tidak cocok
-    
-        if p < alpha:
-            sig_matrix.loc[g1, g2] = False
-            sig_matrix.loc[g2, g1] = False
-        else:
-            sig_matrix.loc[g1, g2] = True
-            sig_matrix.loc[g2, g1] = True
-    
-    # diagonal = True
-    np.fill_diagonal(sig_matrix.values, True)
 
+    # ===============================
+    # BUILD SIGNIFICANCE MATRIX (SAFE)
+    # ===============================
+    alpha = 0.05
+    groups = group_order
+    
+    sig_matrix = pd.DataFrame(True, index=groups, columns=groups)
+    
+    # ❗ hanya jalan kalau posthoc ada (k > 2)
+    if 'df_posthoc' in locals() and df_posthoc is not None and len(df_posthoc) > 0:
+    
+        for _, row in df_posthoc.iterrows():
+    
+            # AUTO DETECT
+            if "A" in df_posthoc.columns and "B" in df_posthoc.columns:
+                g1 = row["A"]
+                g2 = row["B"]
+                p = float(row["pval"])
+    
+            elif "group1" in df_posthoc.columns and "group2" in df_posthoc.columns:
+                g1 = row["group1"]
+                g2 = row["group2"]
+                p = float(row["p-adj"])
+    
+            else:
+                continue
+    
+            if p < alpha:
+                sig_matrix.loc[g1, g2] = False
+                sig_matrix.loc[g2, g1] = False
+            else:
+                sig_matrix.loc[g1, g2] = True
+                sig_matrix.loc[g2, g1] = True
+    
+    # diagonal tetap True
+    np.fill_diagonal(sig_matrix.values, True)
+    
     # ===============================
     # GENERATE LETTERS (CLD STYLE)
     # ===============================
