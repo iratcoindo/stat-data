@@ -188,11 +188,11 @@ if all_data:
             else:
                 st.warning("Welch ANOVA gagal, fallback ke Kruskal")
                 stat, p_value = stats.kruskal(*group_values)
-                test = "Kruskal"
+                test = "Kruskal Wallis"
             posthoc_df = pg.pairwise_gameshowell(dv="Value", between="Group", data=df)
 
         else:
-            test = "Kruskal"
+            test = "Kruskal Wallis"
             stat, p_value = stats.kruskal(*group_values)
             posthoc_df = sp.posthoc_dunn(df, val_col="Value", group_col="Group", p_adjust="bonferroni")
 
@@ -200,7 +200,21 @@ if all_data:
     st.write(f"p-value: {round(p_value,5)}")
 
     if posthoc_df is not None: 
-        st.write("### 📌 Post-hoc Result") 
+        # ===============================
+        # AUTO LABEL POSTHOC TEST
+        # ===============================
+        if test == "ANOVA":
+            posthoc_label = "Tukey HSD"
+        elif test == "Welch ANOVA":
+            posthoc_label = "Games-Howell"
+        elif test == "Kruskal":
+            posthoc_label = "Dunn Test"
+        elif test in ["t-test", "Welch t-test", "Mann-Whitney"]:
+            posthoc_label = "Pairwise Comparison"
+        else:
+            posthoc_label = "Post-hoc"
+        
+        st.write(f"### 📌 Post-hoc Result ({posthoc_label})")
         # ===============================
         # GANTI HEDGES → P.SIGNIF
         # ===============================
