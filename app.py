@@ -197,35 +197,72 @@ if all_data:
     st.write(f"p-value: {round(p_value,5)}")
 
     if posthoc_df is not None:
-        st.write("### 📌 Post-hoc Result")
-
-        df_posthoc = posthoc_df.copy()
-
-        # ===============================
-        # TAMBAH KOLOM P.SIGNIF TANPA UBAH STRUKTUR
-        # ===============================
+        st.write("### 📌 Post-hoc Result (Clean Table)")
 
         try:
+            # ===============================
+            # ANOVA (Tukey)
+            # ===============================
             if test == "ANOVA":
-                if "p-adj" in df_posthoc.columns:
-                    df_posthoc["p.signif"] = df_posthoc["p-adj"].astype(float).apply(p_to_star)
 
+                df_clean = posthoc_df.copy()
+
+                df_clean = df_clean[["group1", "group2", "meandiff", "p-adj"]]
+                df_clean.columns = ["A", "B", "diff", "pval"]
+
+                mean_map = df.groupby("Group")["Value"].mean().to_dict()
+
+                df_clean["mean_A"] = df_clean["A"].map(mean_map)
+                df_clean["mean_B"] = df_clean["B"].map(mean_map)
+
+                df_clean["p.signif"] = df_clean["pval"].astype(float).apply(p_to_star)
+
+                df_clean = df_clean[["A", "B", "mean_A", "mean_B", "pval", "p.signif"]]
+
+            # ===============================
+            # WELCH (Games-Howell)
+            # ===============================
             elif test == "Welch ANOVA":
-                if "pval" in df_posthoc.columns:
-                    df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
 
-            elif test in ["t-test", "Welch t-test", "Mann-Whitney"]:
-                if "pval" in df_posthoc.columns:
-                    df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
+                df_clean = posthoc_df.copy()
 
+                df_clean = df_clean[["A", "B", "mean(A)", "mean(B)", "pval"]]
+                df_clean.columns = ["A", "B", "mean_A", "mean_B", "pval"]
+
+                df_clean["p.signif"] = df_clean["pval"].astype(float).apply(p_to_star)
+
+                df_clean = df_clean[["A", "B", "mean_A", "mean_B", "pval", "p.signif"]]
+
+            # ===============================
+            # KRUSKAL (Dunn → reshape)
+            # ===============================
             elif test == "Kruskal":
-                # Dunn test → matrix → tidak bisa langsung
-                st.info("p.signif not added (Dunn matrix format)")
+
+                df_clean = posthoc_df.copy()
+
+                df_clean = df_clean.stack().reset_index()
+                df_clean.columns = ["A", "B", "pval"]
+
+                # buang diagonal & duplikat
+                df_clean = df_clean[df_clean["A"] < df_clean["B"]]
+
+                mean_map = df.groupby("Group")["Value"].mean().to_dict()
+
+                df_clean["mean_A"] = df_clean["A"].map(mean_map)
+                df_clean["mean_B"] = df_clean["B"].map(mean_map)
+
+                df_clean["p.signif"] = df_clean["pval"].astype(float).apply(p_to_star)
+
+                df_clean = df_clean[["A", "B", "mean_A", "mean_B", "pval", "p.signif"]]
+
+            else:
+                st.warning("Posthoc format not supported")
+                df_clean = posthoc_df.copy()
+
+            st.dataframe(df_clean, use_container_width=True)
 
         except Exception as e:
-            st.warning(f"p.signif generation error: {e}")
-
-        st.dataframe(df_posthoc, use_container_width=True)
+            st.error(f"Posthoc formatting error: {e}")
 
     # ===============================
     # LETTER GROUPING (CLD - VALID)
