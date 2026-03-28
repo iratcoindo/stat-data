@@ -188,9 +188,6 @@ if all_data:
     # ===============================
     # LETTER GROUPING (CLD - VALID)
     # ===============================
-    # ===============================
-    # LETTER GROUPING (CLD - VALID)
-    # ===============================
     letters = {g: "" for g in group_order}
 
     if posthoc_df is not None and k > 2:
@@ -365,9 +362,9 @@ if all_data:
 
     # format p-value (biar rapi seperti jurnal)
     if p_value < 0.0001:
-        p_text = "p < 0.0001"
+        p_text = "p val < 0.0001"
     else:
-        p_text = f"p = {round(p_value,4)}"
+        p_text = format_p(p_value)
 
     # ===============================
     # POSISI TEKS
