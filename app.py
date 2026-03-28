@@ -8,6 +8,21 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 import scikit_posthocs as sp
 import pingouin as pg
 
+# PAGE CONFIG
+st.set_page_config(
+    page_title="iRATco TrackR",
+    page_icon="logo.png",
+    layout="wide"
+)
+
+# HEADER
+col1, col2 = st.columns([8,2])
+with col1:
+    st.title("iRATco TrackR")
+    st.markdown("<span style='font-size:16px;color:gray;'>version 1.1.0</span>", unsafe_allow_html=True)
+with col2:
+    st.image("logo_iratco.png", width=250)
+    
 # ===============================
 # STYLE
 # ===============================
@@ -459,3 +474,16 @@ if all_data:
     )
     
     st.pyplot(fig)
+
+st.markdown("---")
+
+st.markdown("""
+© 2026 Mawar Subangkit  
+**Mouse Behavioral Tracking Software**  
+
+If you use this software, please cite:
+
+**Subangkit**, MAWAR (2026)  
+**iRATco TrackR: Open-field Behavioral Tracking Software**  
+Available at: https://iratcotrackr.streamlit.app/
+""")
