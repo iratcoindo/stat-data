@@ -10,7 +10,7 @@ import pingouin as pg
 
 # PAGE CONFIG
 st.set_page_config(
-    page_title="iRATco TrackR",
+    page_title="",
     page_icon="logo.png",
     layout="wide"
 )
@@ -479,11 +479,11 @@ st.markdown("---")
 
 st.markdown("""
 © 2026 Mawar Subangkit  
-**Mouse Behavioral Tracking Software**  
+**Data Statistical Analyzer Software**  
 
 If you use this software, please cite:
 
 **Subangkit**, MAWAR (2026)  
-**iRATco TrackR: Open-field Behavioral Tracking Software**  
-Available at: https://iratcotrackr.streamlit.app/
+**iRATco Data Statistical Analyzer Software**  
+Available at: https://iratco-ngdata.streamlit.app/
 """)
