@@ -207,7 +207,7 @@ if all_data:
             posthoc_label = "Tukey HSD"
         elif test == "Welch ANOVA":
             posthoc_label = "Games-Howell"
-        elif test == "Kruskal":
+        elif test == "Kruskal Wallis":
             posthoc_label = "Dunn Test"
         elif test in ["t-test", "Welch t-test", "Mann-Whitney"]:
             posthoc_label = "Pairwise Comparison"
