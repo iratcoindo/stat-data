@@ -72,7 +72,7 @@ def format_p(p):
 # UI
 # ===============================
 st.set_page_config(layout="wide")
-st.title("📊 iRATco Box Plot")
+st.title("📊 iRATco Box/Bar Plot")
 
 if "groups" not in st.session_state:
     st.session_state.groups = [{"name": "Group 1", "data": ""}]
