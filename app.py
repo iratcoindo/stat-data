@@ -213,6 +213,12 @@ if all_data:
             posthoc_label = "Pairwise Comparison"
         else:
             posthoc_label = "Post-hoc"
+        if test == "Kruskal Wallis":
+            df_posthoc = posthoc_df.stack().reset_index()
+            df_posthoc.columns = ["A", "B", "pval"]
+
+    else:
+        df_posthoc = posthoc_df.copy()
         
         st.write(f"### 📌 Post-hoc Result ({posthoc_label})")
         # ===============================
@@ -241,9 +247,21 @@ if all_data:
     sig_matrix = pd.DataFrame(True, index=groups, columns=groups)
     
     for _, row in df_posthoc.iterrows():
-        g1 = row["A"]
-        g2 = row["B"]
-        p = float(row["pval"])
+        # ===============================
+        # AUTO DETECT COLUMN NAME
+        # ===============================
+        if "A" in df_posthoc.columns and "B" in df_posthoc.columns:
+            g1 = row["A"]
+            g2 = row["B"]
+            p = float(row["pval"])
+    
+        elif "group1" in df_posthoc.columns and "group2" in df_posthoc.columns:
+            g1 = row["group1"]
+            g2 = row["group2"]
+            p = float(row["p-adj"])
+    
+        else:
+            continue  # skip kalau format tidak cocok
     
         if p < alpha:
             sig_matrix.loc[g1, g2] = False
