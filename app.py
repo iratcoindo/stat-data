@@ -377,7 +377,8 @@ if all_data:
                 jitter,
                 y,
                 color="gray",
-                s=35,
+                s=30,
+                alpha=0.8
                 zorder=3
             )
 
@@ -412,7 +413,8 @@ if all_data:
                 jitter,
                 y,
                 color="gray",
-                s=35,
+                s=30,
+                alpha=0.8
                 zorder=3
             )
 
