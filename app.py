@@ -43,6 +43,17 @@ def p_to_star(p):
     except:
         return ""
 
+def format_p(p):
+    try:
+        if p < 0.0001:
+            return "p < 0.0001"
+        elif p < 0.001:
+            return f"p = {p:.3e}"   # scientific
+        else:
+            return f"p = {p:.4f}"
+    except:
+        return "p = NA"
+        
 # ===============================
 # UI
 # ===============================
