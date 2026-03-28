@@ -215,12 +215,14 @@ if all_data:
             posthoc_label = "Post-hoc"
         
         st.write(f"### 📌 Post-hoc Result ({posthoc_label})")
+
         # ===============================
-        # STANDARDIZE POSTHOC OUTPUT (UNIFORM FORMAT)
+        # STANDARDIZE POSTHOC OUTPUT (SAFE VERSION)
         # ===============================
-        df_posthoc_clean = pd.DataFrame()
-        
         mean_map = df.groupby("Group")["Value"].mean().to_dict()
+        
+        # dataframe final
+        df_posthoc_clean = pd.DataFrame()
         
         # ===============================
         # ANOVA (Tukey)
@@ -234,7 +236,7 @@ if all_data:
             df_posthoc_clean["mean_A"] = df_posthoc_clean["A"].map(mean_map)
             df_posthoc_clean["mean_B"] = df_posthoc_clean["B"].map(mean_map)
         
-            df_posthoc_clean["diff"] = df_tmp["meandiff"]
+            df_posthoc_clean["diff"] = pd.to_numeric(df_tmp["meandiff"], errors="coerce")
             df_posthoc_clean["se"] = np.nan
             df_posthoc_clean["T"] = np.nan
             df_posthoc_clean["df"] = np.nan
@@ -252,10 +254,10 @@ if all_data:
             df_posthoc_clean["mean_A"] = df_tmp["mean(A)"]
             df_posthoc_clean["mean_B"] = df_tmp["mean(B)"]
         
-            df_posthoc_clean["diff"] = df_tmp["diff"]
-            df_posthoc_clean["se"] = df_tmp["se"]
-            df_posthoc_clean["T"] = df_tmp["T"]
-            df_posthoc_clean["df"] = df_tmp["df"]
+            df_posthoc_clean["diff"] = pd.to_numeric(df_tmp["diff"], errors="coerce")
+            df_posthoc_clean["se"] = pd.to_numeric(df_tmp["se"], errors="coerce")
+            df_posthoc_clean["T"] = pd.to_numeric(df_tmp["T"], errors="coerce")
+            df_posthoc_clean["df"] = pd.to_numeric(df_tmp["df"], errors="coerce")
             df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["pval"], errors="coerce")
         
         # ===============================
@@ -263,11 +265,15 @@ if all_data:
         # ===============================
         elif test == "Kruskal Wallis":
         
-            df_tmp = posthoc_df.stack().reset_index()
+            df_tmp = posthoc_df.copy().stack().reset_index()
             df_tmp.columns = ["A", "B", "pval"]
         
-            # ambil hanya kombinasi unik
-            df_tmp = df_tmp[df_tmp["A"] < df_tmp["B"]]
+            # ❗ BUANG SELF COMPARISON
+            df_tmp = df_tmp[df_tmp["A"] != df_tmp["B"]]
+        
+            # ❗ HAPUS DUPLIKAT PAIR (AMAN)
+            df_tmp["pair"] = df_tmp.apply(lambda x: tuple(sorted([x["A"], x["B"]])), axis=1)
+            df_tmp = df_tmp.drop_duplicates(subset="pair").drop(columns="pair")
         
             df_posthoc_clean["A"] = df_tmp["A"]
             df_posthoc_clean["B"] = df_tmp["B"]
@@ -280,14 +286,14 @@ if all_data:
             df_posthoc_clean["T"] = np.nan
             df_posthoc_clean["df"] = np.nan
             df_posthoc_clean["pval"] = pd.to_numeric(df_tmp["pval"], errors="coerce")
-
+        
         # ===============================
-        # ADD SIGNIFICANCE STAR
+        # ADD SIGNIFICANCE
         # ===============================
         df_posthoc_clean["p.signif"] = df_posthoc_clean["pval"].apply(p_to_star)
         
         # ===============================
-        # FINAL COLUMN ORDER
+        # FINAL ORDER
         # ===============================
         df_posthoc_clean = df_posthoc_clean[
             ["A","B","mean_A","mean_B","diff","se","T","df","pval","p.signif"]
@@ -298,9 +304,8 @@ if all_data:
         # ===============================
         st.dataframe(df_posthoc_clean, use_container_width=True)
         
-        # 👉 pakai ini untuk CLD
+        # IMPORTANT: untuk CLD pakai ini
         df_posthoc = df_posthoc_clean.copy()
-
 
     # ===============================
     # BUILD SIGNIFICANCE MATRIX (FROM pval)
