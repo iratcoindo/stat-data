@@ -230,27 +230,6 @@ if all_data:
         
         st.dataframe(df_posthoc, use_container_width=True)
 
-        
-        # ===============================
-        # ADD SIGNIFICANCE
-        # ===============================
-        df_posthoc_clean["p.signif"] = df_posthoc_clean["pval"].apply(p_to_star)
-        
-        # ===============================
-        # FINAL ORDER
-        # ===============================
-        df_posthoc_clean = df_posthoc_clean[
-            ["A","B","mean_A","mean_B","diff","se","T","df","pval","p.signif"]
-        ]
-        
-        # ===============================
-        # DISPLAY
-        # ===============================
-        st.dataframe(df_posthoc_clean, use_container_width=True)
-        
-        # IMPORTANT: untuk CLD pakai ini
-        df_posthoc = df_posthoc_clean.copy()
-
     # ===============================
     # BUILD SIGNIFICANCE MATRIX (FROM pval)
     # ===============================
