@@ -403,28 +403,6 @@ if all_data:
         ax.set_xticks(range(1, len(group_order)+1))
 
     # ===============================
-    # LETTER DISPLAY
-    # ===============================
-    y_max = df["Value"].max()
-    y_range = y_max - df["Value"].min()
-
-    for i, g in enumerate(group_order):
-
-        # posisi x menyesuaikan jenis plot
-        if plot_type == "Boxplot":
-            xpos = i + 1
-        else:
-            xpos = i
-    
-            ax.text(
-                xpos,
-                y_max + y_range*0.1,
-                letters[g],
-                ha='center',
-                fontsize=14
-            )
-
-    # ===============================
     # AXIS
     # ===============================
     if plot_type == "Barplot":
