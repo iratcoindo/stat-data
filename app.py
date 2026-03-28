@@ -263,18 +263,46 @@ if all_data:
         # ===============================
         # KRUSKAL (Dunn)
         # ===============================
+        # ===============================
+        # KRUSKAL (Dunn) - FIX FINAL
+        # ===============================
         elif test == "Kruskal Wallis":
         
             df_tmp = posthoc_df.copy().stack().reset_index()
             df_tmp.columns = ["A", "B", "pval"]
         
-            # ❗ BUANG SELF COMPARISON
+            # buang self comparison
             df_tmp = df_tmp[df_tmp["A"] != df_tmp["B"]]
         
-            # ❗ HAPUS DUPLIKAT PAIR (AMAN)
-            df_tmp["pair"] = df_tmp.apply(lambda x: tuple(sorted([x["A"], x["B"]])), axis=1)
-            df_tmp = df_tmp.drop_duplicates(subset="pair").drop(columns="pair")
+            # pastikan string (anti error)
+            df_tmp["A"] = df_tmp["A"].astype(str)
+            df_tmp["B"] = df_tmp["B"].astype(str)
         
+            # buang NaN
+            df_tmp = df_tmp.dropna(subset=["A", "B", "pval"])
+        
+            # ===============================
+            # REMOVE DUPLICATE PAIRS (AMAN TANPA APPLY)
+            # ===============================
+            seen = set()
+            rows = []
+        
+            for _, row in df_tmp.iterrows():
+                a = row["A"]
+                b = row["B"]
+        
+                key1 = f"{a}_{b}"
+                key2 = f"{b}_{a}"
+        
+                if key1 not in seen and key2 not in seen:
+                    seen.add(key1)
+                    rows.append(row)
+        
+            df_tmp = pd.DataFrame(rows)
+        
+            # ===============================
+            # BUILD FINAL TABLE
+            # ===============================
             df_posthoc_clean["A"] = df_tmp["A"]
             df_posthoc_clean["B"] = df_tmp["B"]
         
