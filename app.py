@@ -213,12 +213,6 @@ if all_data:
             posthoc_label = "Pairwise Comparison"
         else:
             posthoc_label = "Post-hoc"
-        if test == "Kruskal Wallis":
-            df_posthoc = posthoc_df.stack().reset_index()
-            df_posthoc.columns = ["A", "B", "pval"]
-
-    else:
-        df_posthoc = posthoc_df.copy()
         
         st.write(f"### 📌 Post-hoc Result ({posthoc_label})")
         # ===============================
@@ -389,23 +383,7 @@ if all_data:
             )
 
         ax.set_xticks(range(1, len(group_order)+1))
-    # ===============================
-    # LETTER DISPLAY (CLD)
-    # ===============================
-    y_max = df["Value"].max()
-    y_range = y_max - df["Value"].min()
     
-    for i, g in enumerate(group_order):
-    
-        xpos = i if plot_type == "Barplot" else i + 1
-    
-        ax.text(
-            xpos,
-            y_max + y_range*0.1,
-            letters[g],
-            ha='center',
-            fontsize=14
-        )
     # ===============================
     # AXIS
     # ===============================
