@@ -197,35 +197,35 @@ if all_data:
     st.write(f"p-value: {round(p_value,5)}")
 
     if posthoc_df is not None:
-    st.write("### 📌 Post-hoc Result")
+        st.write("### 📌 Post-hoc Result")
 
-    df_posthoc = posthoc_df.copy()
+        df_posthoc = posthoc_df.copy()
 
-    # ===============================
-    # TAMBAH KOLOM P.SIGNIF TANPA UBAH STRUKTUR
-    # ===============================
+        # ===============================
+        # TAMBAH KOLOM P.SIGNIF TANPA UBAH STRUKTUR
+        # ===============================
 
-    try:
-        if test == "ANOVA":
-            if "p-adj" in df_posthoc.columns:
-                df_posthoc["p.signif"] = df_posthoc["p-adj"].astype(float).apply(p_to_star)
+        try:
+            if test == "ANOVA":
+                if "p-adj" in df_posthoc.columns:
+                    df_posthoc["p.signif"] = df_posthoc["p-adj"].astype(float).apply(p_to_star)
 
-        elif test == "Welch ANOVA":
-            if "pval" in df_posthoc.columns:
-                df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
+            elif test == "Welch ANOVA":
+                if "pval" in df_posthoc.columns:
+                    df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
 
-        elif test in ["t-test", "Welch t-test", "Mann-Whitney"]:
-            if "pval" in df_posthoc.columns:
-                df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
+            elif test in ["t-test", "Welch t-test", "Mann-Whitney"]:
+                if "pval" in df_posthoc.columns:
+                    df_posthoc["p.signif"] = df_posthoc["pval"].astype(float).apply(p_to_star)
 
-        elif test == "Kruskal":
-            # Dunn test → matrix → tidak bisa langsung
-            st.info("p.signif not added (Dunn matrix format)")
+            elif test == "Kruskal":
+                # Dunn test → matrix → tidak bisa langsung
+                st.info("p.signif not added (Dunn matrix format)")
 
-    except Exception as e:
-        st.warning(f"p.signif generation error: {e}")
+        except Exception as e:
+            st.warning(f"p.signif generation error: {e}")
 
-    st.dataframe(df_posthoc, use_container_width=True)
+        st.dataframe(df_posthoc, use_container_width=True)
 
     # ===============================
     # LETTER GROUPING (CLD - VALID)
