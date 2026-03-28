@@ -198,69 +198,77 @@ if all_data:
 
     if posthoc_df is not None:
         st.write("### 📌 Post-hoc Result (Clean Table)")
-
+    
         try:
             # ===============================
             # ANOVA (Tukey)
             # ===============================
             if test == "ANOVA":
-
+    
                 df_clean = posthoc_df.copy()
-
+    
                 df_clean = df_clean[["group1", "group2", "meandiff", "p-adj"]]
                 df_clean.columns = ["A", "B", "diff", "pval"]
-
+    
+                # 🔥 FIX: paksa numeric
+                df_clean["pval"] = pd.to_numeric(df_clean["pval"], errors="coerce")
+    
                 mean_map = df.groupby("Group")["Value"].mean().to_dict()
-
+    
                 df_clean["mean_A"] = df_clean["A"].map(mean_map)
                 df_clean["mean_B"] = df_clean["B"].map(mean_map)
-
-                df_clean["p.signif"] = df_clean["pval"].astype(float).apply(p_to_star)
-
+    
+                df_clean["p.signif"] = df_clean["pval"].apply(p_to_star)
+    
                 df_clean = df_clean[["A", "B", "mean_A", "mean_B", "pval", "p.signif"]]
-
+    
             # ===============================
-            # WELCH (Games-Howell)
+            # WELCH
             # ===============================
             elif test == "Welch ANOVA":
-
+    
                 df_clean = posthoc_df.copy()
-
+    
                 df_clean = df_clean[["A", "B", "mean(A)", "mean(B)", "pval"]]
                 df_clean.columns = ["A", "B", "mean_A", "mean_B", "pval"]
-
-                df_clean["p.signif"] = df_clean["pval"].astype(float).apply(p_to_star)
-
+    
+                # 🔥 FIX
+                df_clean["pval"] = pd.to_numeric(df_clean["pval"], errors="coerce")
+    
+                df_clean["p.signif"] = df_clean["pval"].apply(p_to_star)
+    
                 df_clean = df_clean[["A", "B", "mean_A", "mean_B", "pval", "p.signif"]]
-
+    
             # ===============================
-            # KRUSKAL (Dunn → reshape)
+            # KRUSKAL (Dunn)
             # ===============================
             elif test == "Kruskal":
-
+    
                 df_clean = posthoc_df.copy()
-
+    
                 df_clean = df_clean.stack().reset_index()
                 df_clean.columns = ["A", "B", "pval"]
-
-                # buang diagonal & duplikat
+    
+                # 🔥 FIX
+                df_clean["pval"] = pd.to_numeric(df_clean["pval"], errors="coerce")
+    
                 df_clean = df_clean[df_clean["A"] < df_clean["B"]]
-
+    
                 mean_map = df.groupby("Group")["Value"].mean().to_dict()
-
+    
                 df_clean["mean_A"] = df_clean["A"].map(mean_map)
                 df_clean["mean_B"] = df_clean["B"].map(mean_map)
-
-                df_clean["p.signif"] = df_clean["pval"].astype(float).apply(p_to_star)
-
+    
+                df_clean["p.signif"] = df_clean["pval"].apply(p_to_star)
+    
                 df_clean = df_clean[["A", "B", "mean_A", "mean_B", "pval", "p.signif"]]
-
+    
             else:
                 st.warning("Posthoc format not supported")
                 df_clean = posthoc_df.copy()
-
+    
             st.dataframe(df_clean, use_container_width=True)
-
+    
         except Exception as e:
             st.error(f"Posthoc formatting error: {e}")
 
