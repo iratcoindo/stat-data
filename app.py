@@ -289,32 +289,73 @@ if all_data:
     colors = prism_palette(len(group_order))
     x = np.arange(len(group_order))
 
+    plot_type = st.selectbox("Plot Type", ["Barplot", "Boxplot"])
+    
     fig, ax = plt.subplots()
 
     # BARPLOT
-    ax.bar(
-        x,
-        means.values,
-        yerr=errors.values,
-        capsize=6,
-        color=colors,
-        edgecolor="black",
-        linewidth=1.5,
-        alpha=0.8
-    )
+    if plot_type == "Barplot":
 
-    # scatter (jitter)
-    for i, g in enumerate(group_order):
-        y = grouped.get_group(g)
-        jitter = np.random.normal(i, 0.04, size=len(y))
-
-        ax.scatter(
-            jitter,
-            y,
-            color="gray",
-            s=35,
-            zorder=3
+        ax.bar(
+            x,
+            means.values,
+            yerr=errors.values,
+            capsize=6,
+            color=colors,
+            edgecolor="black",
+            linewidth=1.5,
+            alpha=0.8
         )
+
+        # scatter (jitter)
+        for i, g in enumerate(group_order):
+            y = grouped.get_group(g)
+            jitter = np.random.normal(i, 0.04, size=len(y))
+
+            ax.scatter(
+                jitter,
+                y,
+                color="gray",
+                s=35,
+                zorder=3
+            )
+
+    else:  # BOXPLOT
+
+        data = [grouped.get_group(g) for g in group_order]
+
+        box = ax.boxplot(
+            data,
+            patch_artist=True,
+            showfliers=False,
+            widths=0.6
+        )
+
+        for patch, color in zip(box['boxes'], colors):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.8)
+            patch.set_edgecolor("black")
+            patch.set_linewidth(1.5)
+
+        for element in ['whiskers', 'caps', 'medians']:
+            for item in box[element]:
+                item.set_color("black")
+                item.set_linewidth(1.5)
+
+        # scatter (jitter)
+        for i, g in enumerate(group_order):
+            y = grouped.get_group(g)
+            jitter = np.random.normal(i+1, 0.04, size=len(y))
+
+            ax.scatter(
+                jitter,
+                y,
+                color="gray",
+                s=35,
+                zorder=3
+            )
+
+        ax.set_xticks(range(1, len(group_order)+1))
 
     # ===============================
     # LETTER DISPLAY
@@ -335,7 +376,10 @@ if all_data:
     # ===============================
     # AXIS
     # ===============================
-    ax.set_xticks(x)
+    if plot_type == "Barplot":
+        ax.set_xticks(x)
+    else:
+        ax.set_xticks(range(1, len(group_order)+1))
     ax.set_xticklabels(group_order, rotation=45, ha='right')
     ax.set_ylabel("Value")
 
